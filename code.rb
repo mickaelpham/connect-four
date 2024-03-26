@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'minitest/autorun'
 
 class Board
@@ -70,7 +72,7 @@ class Board
   end
 
   def cols
-    @grid.map { |col| col.join }
+    @grid.map(&:join)
   end
 
   def rows
@@ -90,79 +92,44 @@ class Board
   end
 
   def diagonals
+    [
+      *collect_diagonals(:fixed_row, 0, 0, :up_right),
+      *collect_diagonals(:fixed_col, 0, 1, :up_right),
+      *collect_diagonals(:fixed_row, 0, 0, :up_left),
+      *collect_diagonals(:fixed_col, MAX_COLS - 1, 1, :up_left)
+    ]
+  end
+
+  # rubocop:disable Metrics
+  def collect_diagonals(fixed_row_or_col, from_col, from_row, direction)
     result = []
 
-    # fixed row at 0, diagonals going up->right
-    starting_row = 0
-    (0...MAX_COLS).each do |starting_col|
-      diagonal = ""
-      row_index = starting_row
-      col_index = starting_col
+    upto_col = fixed_row_or_col == :fixed_col ? from_col : MAX_COLS - 1
+    upto_row = fixed_row_or_col == :fixed_row ? from_row : MAX_ROWS - 1
 
-      while row_index < MAX_ROWS && col_index < MAX_COLS
-        diagonal += elem_at(col_index, row_index)
-        row_index += 1
-        col_index += 1
+    (from_col..upto_col).each do |starting_col|
+      (from_row..upto_row).each do |starting_row|
+        diagonal = ''
+        col_index = starting_col
+        row_index = starting_row
+
+        while col_index >= 0 && col_index < MAX_COLS && row_index < MAX_ROWS
+          diagonal += elem_at(col_index, row_index)
+          row_index += 1
+          col_index += (direction == :up_right ? 1 : -1)
+        end
+
+        result << diagonal
       end
-
-      result << diagonal
-    end
-
-    # fixed col at 0, diagonals going up->right
-    starting_col = 0
-    # starting from 1 because we already collected the diagonal at 0 above
-    (1...MAX_ROWS).each do |starting_row|
-      diagonal = ""
-      row_index = starting_row
-      col_index = starting_col
-
-      while row_index < MAX_ROWS && col_index < MAX_COLS
-        diagonal += elem_at(col_index, row_index)
-        row_index += 1
-        col_index += 1
-      end
-
-      result << diagonal
-    end
-
-    # fixed row at 0, diagonals going up->left
-    starting_row = 0
-    (0...MAX_COLS).each do |starting_col|
-      diagonal = ""
-      row_index = starting_row
-      col_index = starting_col
-
-      while row_index < MAX_ROWS && col_index >= 0
-        diagonal += elem_at(col_index, row_index)
-        row_index += 1
-        col_index -= 1
-      end
-
-      result << diagonal
-    end
-
-    # fixed col at MAX_COLS - 1, diagonals going up->left
-    starting_col = MAX_COLS - 1
-    # starting from 1 because we already collected the diagonal at 0 above
-    (1...MAX_ROWS).each do |starting_row|
-      diagonal = ""
-      row_index = starting_row
-      col_index = starting_col
-
-      while row_index < MAX_ROWS && col_index >= 0
-        diagonal += elem_at(col_index, row_index)
-        row_index += 1
-        col_index -= 1
-      end
-
-      result << diagonal
     end
 
     result
   end
+  # rubocop:enable Metrics
 end
 
-class BoardTest < Minitest::Test
+# rubocop:disable Metrics/ClassLength
+class TestBoard < Minitest::Test
   def setup
     @board = Board.new
   end
@@ -306,3 +273,4 @@ class BoardTest < Minitest::Test
     assert @board.game_ended?, 'game must end after connect four'
   end
 end
+# rubocop:enable Metrics/ClassLength
