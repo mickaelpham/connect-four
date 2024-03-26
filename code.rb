@@ -80,8 +80,7 @@ class Board
       row = []
 
       (0...MAX_COLS).each do |col_index|
-        cell = @grid[col_index][row_index]
-        row << (cell.nil? ? " " : cell)
+        row << elem_at(col_index, row_index)
       end
 
       rows << row.join
